@@ -1,37 +1,80 @@
-import { HeroForm } from '@/components/form';
-import { Icons } from '@/components/icons';
+'use client';
+
 import { Button } from '@/components/ui/button';
-import * as m from '@/paraglide/messages';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { useMutation } from '@tanstack/react-query';
+import Image from 'next/image';
+import { useState } from 'react';
 
-const Home = () => {
+export default function Home() {
+  const [input, setInput] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
+
+  const generateImage = useMutation({
+    mutationFn: async (input: string) => {
+      const response = await fetch(
+        `/api/generate-image?input=${encodeURIComponent(input)}`
+      );
+      if (!response.ok) {
+        throw new Error('Failed to generate image');
+      }
+      return response.blob();
+    },
+    onSuccess: (data) => {
+      const url = URL.createObjectURL(data);
+      setImageUrl(url);
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    generateImage.mutate(input);
+  };
+
   return (
-    <section className="container mt-10 flex flex-col items-center gap-3 text-center md:absolute md:left-1/2 md:top-1/2 md:mt-0 md:-translate-x-1/2 md:-translate-y-1/2">
-      <h1 className="mb-1 font-mono text-3xl font-extrabold leading-tight tracking-tighter md:text-4xl">
-        {m.nextjs_starter_template_headline()}
-      </h1>
-      <p className="text-muted-foreground max-w-2xl">
-        {m.nextjs_starter_template_description()}
-      </p>
-      <div className="mt-1">
-        <HeroForm />
-      </div>
-      <div className="mt-2 flex gap-4">
-        <Button asChild>
-          <a
-            href="https://github.com/gfargo/git-hash-art-www/blob/main/README.md#getting-started"
-            target="_blank"
-          >
-            {m.get_started()}
-          </a>
-        </Button>
-        <Button variant="outline" asChild>
-          <a href="https://github.com/gfargo/git-hash-art-www" target="_blank">
-            <Icons.github className="mr-2 size-4" /> {m.github()}
-          </a>
-        </Button>
-      </div>
-    </section>
+    <div className="container mx-auto flex h-full grow items-center justify-center px-4 py-8">
+      <Card className="mx-auto w-full max-w-md">
+        <CardHeader>
+          <CardTitle className="text-center text-2xl font-bold">
+            Git Hash Art Generator
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <Input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Enter GitHub URL or commit hash"
+              className="w-full"
+            />
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={generateImage.isPending}
+            >
+              {generateImage.isPending ? 'Generating...' : 'Generate Image'}
+            </Button>
+          </form>
+          {generateImage.isError && (
+            <p className="mt-4 text-red-500">
+              Error: {generateImage.error.message}
+            </p>
+          )}
+          {imageUrl && (
+            <div className="mt-6">
+              <Image
+                src={imageUrl}
+                alt="Generated Git Hash Art"
+                width={300}
+                height={300}
+                className="mx-auto"
+              />
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
-};
-
-export default Home;
+}
