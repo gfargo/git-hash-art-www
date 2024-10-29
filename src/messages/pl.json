@@ -1,6 +1,6 @@
 {
   "$schema": "https://inlang.com/schema/inlang-message-format",
-  "app_name": "next-starter",
+  "app_name": "git-hash-art-www",
   "sign_in": "Zaloguj się",
   "theme_toggle_label": "zmień motyw",
   "my_account": "Moje konto",
